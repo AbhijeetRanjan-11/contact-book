@@ -50,7 +50,7 @@
 ### **Running the Application**  
 1. **Clone the repository**  
    ```sh
-   git clone https://github.com/yourusername/contact-book.git
+   git clone https://github.com/AbhijeetRanjan-11/contact-book.git
    cd contact-book
    ```
 
