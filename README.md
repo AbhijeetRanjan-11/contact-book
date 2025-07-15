@@ -74,7 +74,12 @@
 ---
 
 ## **Screenshots (Conceptual)**  
-*(Could later integrate demo images from the GUI)*  
+
+<img width="1120" height="783" alt="Screenshot 2025-07-15 191931" src="https://github.com/user-attachments/assets/e9ae08c3-f1d9-42b0-94bc-53d82a20eb1e" />
+
+<img width="1119" height="773" alt="Screenshot 2025-07-15 191947" src="https://github.com/user-attachments/assets/c846b114-ae23-45db-b1d9-78d9b39852f1" />
+
+
 
 ---
 
