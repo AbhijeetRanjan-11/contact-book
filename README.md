@@ -81,7 +81,7 @@
 ### **Contributions Welcome!** 🚀  
 Found a bug? Have suggestions? Feel free to **open an issue** or **submit a PR**.  
 
-🔗 **GitHub Repository:** [github.com/yourusername/contact-book](https://github.com/AbhijeetRanjan-11/contact-book)  
+🔗 **GitHub Repository:** [https://github.com/AbhijeetRanjan-11/contact-book](https://github.com/AbhijeetRanjan-11/contact-book)  
 
 ---
 
