@@ -3,27 +3,34 @@ import os
 import re
 from tkinter import *
 from tkinter import ttk, messagebox
-from PIL import Image, ImageTk
 
 
 class Contact:
-    def __init__(self, name, phone, email, address):
+    def __init__(self, name, phone, email, address, postal_code):
         self.name = name
         self.phone = phone
         self.email = email
         self.address = address
+        self.postal_code = postal_code
 
     def to_dict(self):
         return {
             "name": self.name,
             "phone": self.phone,
             "email": self.email,
-            "address": self.address
+            "address": self.address,
+            "postal_code": self.postal_code
         }
 
     @classmethod
     def from_dict(cls, data):
-        return cls(data["name"], data["phone"], data["email"], data["address"])
+        return cls(
+            data.get("name", ""),
+            data.get("phone", ""),
+            data.get("email", ""),
+            data.get("address", ""),
+            data.get("postal_code", "")  # Default to empty string if not found
+        )
 
 
 class ContactBook:
@@ -112,17 +119,6 @@ class ContactBookGUI:
         title_label = ttk.Label(header_frame, text="Contact Book", style='Header.TLabel')
         title_label.pack(side=LEFT, padx=10)
 
-        # Add a small logo/icon
-        try:
-            # Using a placeholder icon - in a real app, you would use an actual image file
-            icon = Image.new('RGB', (40, 40), color='#4e73df')
-            photo = ImageTk.PhotoImage(icon)
-            icon_label = Label(header_frame, image=photo, background="#f0f2f5")
-            icon_label.image = photo
-            icon_label.pack(side=RIGHT, padx=10)
-        except:
-            pass  # If PIL is not available, skip the icon
-
     def create_search_frame(self):
         search_frame = ttk.Frame(self.root, style='TFrame')
         search_frame.pack(pady=10, padx=10, fill=X)
@@ -163,9 +159,15 @@ class ContactBookGUI:
         address_entry = ttk.Entry(form_frame, textvariable=self.address_var, font=('Helvetica', 10))
         address_entry.grid(row=3, column=1, sticky=EW, padx=5, pady=5)
 
+        # Postal Code Field
+        ttk.Label(form_frame, text="Postal Code:").grid(row=4, column=0, sticky=W, padx=5, pady=5)
+        self.postal_code_var = StringVar()
+        postal_code_entry = ttk.Entry(form_frame, textvariable=self.postal_code_var, font=('Helvetica', 10))
+        postal_code_entry.grid(row=4, column=1, sticky=EW, padx=5, pady=5)
+
         # Buttons
         button_frame = ttk.Frame(form_frame, style='TFrame')
-        button_frame.grid(row=4, column=0, columnspan=2, pady=10)
+        button_frame.grid(row=5, column=0, columnspan=2, pady=10)
 
         add_button = ttk.Button(button_frame, text="Add Contact", command=self.add_contact)
         add_button.pack(side=LEFT, padx=5)
@@ -183,18 +185,20 @@ class ContactBookGUI:
         list_frame = ttk.Frame(self.root, style='TFrame')
         list_frame.pack(pady=10, padx=10, fill=BOTH, expand=True)
 
-        self.contact_tree = ttk.Treeview(list_frame, columns=("Name", "Phone", "Email", "Address"),
+        self.contact_tree = ttk.Treeview(list_frame, columns=("Name", "Phone", "Email", "Address", "Postal Code"),
                                          show="headings", selectmode="browse")
 
         self.contact_tree.heading("Name", text="Name", anchor=W)
         self.contact_tree.heading("Phone", text="Phone", anchor=W)
         self.contact_tree.heading("Email", text="Email", anchor=W)
         self.contact_tree.heading("Address", text="Address", anchor=W)
+        self.contact_tree.heading("Postal Code", text="Postal Code", anchor=W)
 
         self.contact_tree.column("Name", width=150, minwidth=100, stretch=NO)
         self.contact_tree.column("Phone", width=120, minwidth=100, stretch=NO)
         self.contact_tree.column("Email", width=180, minwidth=100, stretch=NO)
         self.contact_tree.column("Address", width=250, minwidth=100, stretch=YES)
+        self.contact_tree.column("Postal Code", width=100, minwidth=100, stretch=NO)
 
         scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=self.contact_tree.yview)
         self.contact_tree.configure(yscrollcommand=scrollbar.set)
@@ -204,9 +208,6 @@ class ContactBookGUI:
 
         # Double-click to load contact for editing
         self.contact_tree.bind("<Double-1>", self.load_selected_contact)
-
-        # Right-click for delete option
-        self.contact_tree.bind("<Button-3>", self.show_context_menu)
 
     def update_contact_list(self, contacts=None):
         if contacts is None:
@@ -219,7 +220,8 @@ class ContactBookGUI:
                 contact.name,
                 contact.phone,
                 contact.email,
-                contact.address
+                contact.address,
+                contact.postal_code
             ))
 
     def search_contacts(self, event=None):
@@ -236,18 +238,15 @@ class ContactBookGUI:
         phone = self.phone_var.get().strip()
         email = self.email_var.get().strip()
         address = self.address_var.get().strip()
+        postal_code = self.postal_code_var.get().strip()
 
         # Input validation
         if not name:
             messagebox.showerror("Error", "Name is required")
             return
 
-        if not phone:
-            messagebox.showerror("Error", "Phone number is required")
-            return
-
-        if not self.is_valid_phone(phone):
-            messagebox.showerror("Error", "Invalid phone number format")
+        if not phone or len(re.sub(r'\D', '', phone)) < 10:
+            messagebox.showerror("Error", "Phone number must be at least 10 digits long")
             return
 
         if email and not self.is_valid_email(email):
@@ -260,7 +259,7 @@ class ContactBookGUI:
                 messagebox.showerror("Error", "Contact with this name already exists")
                 return
 
-        contact = Contact(name, phone, email, address)
+        contact = Contact(name, phone, email, address, postal_code)
         self.contact_book.add_contact(contact)
         self.update_contact_list()
         self.clear_form()
@@ -271,46 +270,28 @@ class ContactBookGUI:
         phone = self.phone_var.get().strip()
         email = self.email_var.get().strip()
         address = self.address_var.get().strip()
+        postal_code = self.postal_code_var.get().strip()
 
         # Input validation
         if not name:
             messagebox.showerror("Error", "Name is required")
             return
 
-        if not phone:
-            messagebox.showerror("Error", "Phone number is required")
-            return
-
-        if not self.is_valid_phone(phone):
-            messagebox.showerror("Error", "Invalid phone number format")
+        if not phone or len(re.sub(r'\D', '', phone)) < 10:
+            messagebox.showerror("Error", "Phone number must be at least 10 digits long")
             return
 
         if email and not self.is_valid_email(email):
             messagebox.showerror("Error", "Invalid email format")
             return
 
-        contact = Contact(name, phone, email, address)
+        contact = Contact(name, phone, email, address, postal_code)
         if self.contact_book.update_contact(name, contact):
             self.update_contact_list()
             self.clear_form()
             messagebox.showinfo("Success", "Contact updated successfully")
         else:
             messagebox.showerror("Error", "Contact not found")
-
-    def delete_contact(self):
-        selected_item = self.contact_tree.selection()
-        if not selected_item:
-            messagebox.showerror("Error", "No contact selected")
-            return
-
-        name = self.contact_tree.item(selected_item)['values'][0]
-        if messagebox.askyesno("Confirm", f"Delete contact '{name}'?"):
-            if self.contact_book.delete_contact(name):
-                self.update_contact_list()
-                self.clear_form()
-                messagebox.showinfo("Success", "Contact deleted successfully")
-            else:
-                messagebox.showerror("Error", "Contact not found")
 
     def load_selected_contact(self, event):
         selected_item = self.contact_tree.selection()
@@ -321,25 +302,14 @@ class ContactBookGUI:
             self.phone_var.set(values[1])
             self.email_var.set(values[2])
             self.address_var.set(values[3])
-
-    def show_context_menu(self, event):
-        selected_item = self.contact_tree.identify_row(event.y)
-        if selected_item:
-            self.contact_tree.selection_set(selected_item)
-            menu = Menu(self.root, tearoff=0)
-            menu.add_command(label="Delete", command=self.delete_contact)
-            menu.post(event.x_root, event.y_root)
+            self.postal_code_var.set(values[4])
 
     def clear_form(self):
         self.name_var.set("")
         self.phone_var.set("")
         self.email_var.set("")
         self.address_var.set("")
-
-    @staticmethod
-    def is_valid_phone(phone):
-        # Simple phone validation (10 digits, optionally with country code, spaces, dashes, etc.)
-        return bool(re.match(r'^[\d\+\-\(\)\s]{7,15}$', phone))
+        self.postal_code_var.set("")
 
     @staticmethod
     def is_valid_email(email):
